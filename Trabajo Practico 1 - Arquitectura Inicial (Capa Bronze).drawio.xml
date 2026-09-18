@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="Claude Code">
+  <diagram name="Arquitectura Bronze - TP1" id="arq-bronze-tp1">
+    <mxGraphModel dx="1414" dy="829" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1360" pageHeight="620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" value="Trabajo Practico 1 - Arquitectura Inicial (Capa Bronze)" vertex="1">
+          <mxGeometry height="30" width="1280" x="40" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="hdr_src" parent="1" style="text;html=1;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;fontColor=#6c8ebf;" value="Fuentes de datos&#xa;(API REST - Socrata)" vertex="1">
+          <mxGeometry height="40" width="240" x="60" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hdr_ing" parent="1" style="text;html=1;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;fontColor=#d6b656;" value="Ingesta&#xa;(Databricks + PySpark)" vertex="1">
+          <mxGeometry height="40" width="260" x="370" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hdr_bronze" parent="1" style="text;html=1;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;fontColor=#82b366;" value="Capa Bronze - Unity Catalog&#xa;Catalogo: Datos_Empresas / Esquema: bronze" vertex="1">
+          <mxGeometry height="40" width="280" x="740" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hdr_val" parent="1" style="text;html=1;fontSize=13;fontStyle=1;align=center;verticalAlign=middle;fontColor=#b85450;" value="Validaciones de calidad" vertex="1">
+          <mxGeometry height="40" width="240" x="1080" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="src_rues" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="RUES - Registro Mercantil&#xa;datos.gov.co/resource/c82u-588k" vertex="1">
+          <mxGeometry height="70" width="240" x="60" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="ing_rues" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="Carga por mes o diaria incremental&#xa;HTTP paginado ($limit/$offset)&#xa;replaceWhere / append segun watermark" vertex="1">
+          <mxGeometry height="90" width="260" x="370" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="brz_rues" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;shape=cylinder3;boundedLbl=1;" value="Delta Table&#xa;DE_Semiestructurado_&#xa;RegistroMercantil_Api&#xa;+ _ingested_at + _source" vertex="1">
+          <mxGeometry height="90" width="240" x="760" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="src_trm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="TRM - Tasa de Cambio&#xa;datos.gov.co/resource/mcec-87by" vertex="1">
+          <mxGeometry height="70" width="240" x="60" y="235" as="geometry" />
+        </mxCell>
+        <mxCell id="ing_trm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="Carga incremental obligatoria&#xa;HTTP + filtro $where sobre fecha&#xa;mode(&quot;append&quot;)" vertex="1">
+          <mxGeometry height="80" width="260" x="360" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="brz_trm" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;shape=cylinder3;boundedLbl=1;" value="Delta Table&#xa;DE_Semiestructurado_&#xa;TasaCambio_Api&#xa;+ _ingested_at + _source" vertex="1">
+          <mxGeometry height="80" width="240" x="780" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="src_ciiu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" value="Catalogo CIIU&#xa;datos.gov.co/resource/nuke-fusu" vertex="1">
+          <mxGeometry height="70" width="240" x="60" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="ing_ciiu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="Carga completa&#xa;HTTP + overwrite&#xa;(catalogo estatico)" vertex="1">
+          <mxGeometry height="70" width="260" x="380" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="brz_ciiu" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;shape=cylinder3;boundedLbl=1;" value="Delta Table&#xa;DE_Semiestructurado_&#xa;ActividadesEconomicas_Api&#xa;+ _ingested_at + _source" vertex="1">
+          <mxGeometry height="90" width="240" x="760" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="val" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" value="Nulos, duplicados, outliers&#xa;e integridad referencial&#xa;RUES &lt;-&gt; CIIU&#xa;(solo lectura, no modifica Bronze)" vertex="1">
+          <mxGeometry height="120" width="240" x="1080" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="e_src_ing_rues" edge="1" parent="1" source="src_rues" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" target="ing_rues">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ing_brz_rues" edge="1" parent="1" source="ing_rues" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" target="brz_rues">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_src_ing_trm" edge="1" parent="1" source="src_trm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" target="ing_trm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ing_brz_trm" edge="1" parent="1" source="ing_trm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" target="brz_trm">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="250" />
+              <mxPoint x="690" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_src_ing_ciiu" edge="1" parent="1" source="src_ciiu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" target="ing_ciiu">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ing_brz_ciiu" edge="1" parent="1" source="ing_ciiu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" target="brz_ciiu">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_rues_val" edge="1" parent="1" source="brz_rues" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" target="val">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_trm_val" edge="1" parent="1" source="brz_trm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" target="val">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ciiu_val" edge="1" parent="1" source="brz_ciiu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" target="val">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_join_futuro" edge="1" parent="1" source="brz_rues" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=10;endArrow=none;startArrow=none;curved=0;exitX=0;exitY=0.75;entryX=0;entryY=0.25;" target="brz_ciiu" value="cod_ciiu_act_econ_pri = code&#xa;(futuro JOIN en Silver)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="190" />
+              <mxPoint x="700" y="190" />
+              <mxPoint x="700" y="412.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
