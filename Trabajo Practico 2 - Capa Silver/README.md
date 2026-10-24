@@ -15,24 +15,28 @@ Las tablas principales son **RUES** y **SECOP**. CIIU y TRM son tablas de apoyo:
 
 ## 1. Notebooks
 
-| # | Notebook | Capa | Qué hace |
-|---|---|---|---|
-| 00 | `00_Utilidades_Pipeline` | — | Nombres de tablas, funciones de calidad, escritura `MERGE` idempotente y auditoría. Los demás notebooks lo cargan con `%run`. |
-| 01 | `01_Configuracion_Pipeline` | — | Crea los esquemas `silver`, `dql`, `gold` y `auditoria`, y verifica que Bronze exista. |
-| 02 | `02_Silver_CIIU` | Silver + DQL | Catálogo CIIU depurado. |
-| 03 | `03_Silver_RUES` | Silver + DQL | Empresas validadas (usa el catálogo CIIU de Silver). |
-| 04 | `04_Silver_SECOP` | Silver + DQL | Contratos validados y tipados. |
-| 05 | `05_Silver_TRM` | Silver + DQL | TRM diaria validada. |
-| 06 | `06_Gold_Dim_Empresas` | Gold | Dimensión de empresas con su actividad económica. |
-| 07 | `07_Gold_Fact_Contratos` | Gold | Hechos de contratos con valor en dólares e indicadores. |
-| 08 | `08_Gold_Agg_Indicadores_Mes` | Gold | Serie mensual: empresas creadas y canceladas, contratación y TRM. |
-| 09 | `09_Auditoria_Ejecucion` | Auditoría | Valida que no haya duplicados y que Bronze = Silver + DQL; registra la ejecución. |
-| 10 | `10_Orquestador_Pipeline` | Orquestación | Ejecuta todo el flujo desde un notebook (`dbutils.notebook.run`). |
-| 11 | `11_Prueba_Idempotencia` | Evidencia | Ejecuta el pipeline varias veces y demuestra la idempotencia. |
-| 12 | `12_Analisis_Preguntas_Negocio` | Análisis | Las 15 preguntas de negocio respondidas sobre Gold, con gráfico y tabla. Para la exposición. |
-| — | `job_pipeline_datos_empresas.json` | Orquestación | Definición del Job de Databricks (orquestación principal). |
+| # | Notebook | Capa | Carpeta | Qué hace |
+|---|---|---|---|---|
+| 00 | `00_Utilidades_Pipeline` | — | Capa Silver | Nombres de tablas, funciones de calidad, escritura `MERGE` idempotente y auditoría. Los demás notebooks lo cargan con `%run`. |
+| 01 | `01_Configuracion_Pipeline` | — | Capa Silver | Crea los esquemas `silver`, `dql`, `gold` y `auditoria`, y verifica que Bronze exista. |
+| 02 | `02_Silver_CIIU` | Silver + DQL | Capa Silver | Catálogo CIIU depurado. |
+| 03 | `03_Silver_RUES` | Silver + DQL | Capa Silver | Empresas validadas (usa el catálogo CIIU de Silver). |
+| 04 | `04_Silver_SECOP` | Silver + DQL | Capa Silver | Contratos validados y tipados. |
+| 05 | `05_Silver_TRM` | Silver + DQL | Capa Silver | TRM diaria validada. |
+| 06 | `06_Gold_Dim_Empresas` | Gold | Capa Gold | Dimensión de empresas con su actividad económica. |
+| 07 | `07_Gold_Fact_Contratos` | Gold | Capa Gold | Hechos de contratos con valor en dólares e indicadores. |
+| 08 | `08_Gold_Agg_Indicadores_Mes` | Gold | Capa Gold | Serie mensual: empresas creadas y canceladas, contratación y TRM. |
+| 09 | `09_Auditoria_Ejecucion` | Auditoría | Orquestacion e Idempotencia | Valida que no haya duplicados y que Bronze = Silver + DQL; registra la ejecución. |
+| 10 | `10_Orquestador_Pipeline` | Orquestación | Orquestacion e Idempotencia | Ejecuta todo el flujo desde un notebook (`dbutils.notebook.run`). |
+| 11 | `11_Prueba_Idempotencia` | Evidencia | Orquestacion e Idempotencia | Ejecuta el pipeline varias veces y demuestra la idempotencia. |
+| 12 | `12_Analisis_Preguntas_Negocio` | Análisis | Orquestacion e Idempotencia | Las 15 preguntas de negocio respondidas sobre Gold, con gráfico y tabla. Para la exposición. |
+| — | `job_pipeline_datos_empresas.json` | Orquestación | Orquestacion e Idempotencia | Definición del Job de Databricks (orquestación principal). |
 
-Los notebooks `00` a `05` y `09` a `12`, el `README.md` y el Job viven en esta carpeta (`Trabajo Practico 2 - Capa Silver/`). Los notebooks `06`, `07` y `08` (Gold) viven en la carpeta hermana `Trabajo Practico 2 - Capa Gold/` y cargan las utilidades compartidas con `%run "../Trabajo Practico 2 - Capa Silver/00_Utilidades_Pipeline"`.
+El proyecto se reparte en tres carpetas hermanas, cada una con su propio prefijo `Trabajo Practico 2 - `:
+
+* **`Capa Silver/`** (esta carpeta): `00` a `05`, más este `README.md`.
+* **`Capa Gold/`**: `06`, `07` y `08`. Cargan las utilidades compartidas con `%run "../Trabajo Practico 2 - Capa Silver/00_Utilidades_Pipeline"`.
+* **`Orquestacion e Idempotencia/`**: `09`, `10`, `11`, `12` y el Job JSON. También cargan `00_Utilidades_Pipeline` desde `Capa Silver/` con `%run`, y `10_Orquestador_Pipeline` referencia a `01`–`05` en `Capa Silver/` y a `06`–`08` en `Capa Gold/` con rutas relativas (`../Trabajo Practico 2 - Capa Silver/...`, `../Trabajo Practico 2 - Capa Gold/...`).
 
 ## 2. Convención de nombres
 
@@ -104,11 +108,11 @@ Cada corrida queda registrada en `datos_empresas.auditoria.de_pipeline_ejecucion
 
 ## 6. Cómo ejecutarlo en Databricks
 
-1. **Traer los notebooks al workspace.** Lo más simple es crear un *Git folder* (Workspace → Create → Git folder) con este repositorio. Otra opción es importar la carpeta.
-2. **Primera ejecución:** abrir `10_Orquestador_Pipeline` y darle *Run all*. Crea los esquemas y todas las tablas.
-3. **Crear el Job:** Workflows → Jobs → Create Job → menú `⋮` → *Edit as JSON* (o *View JSON* → *Edit*). Pegar el contenido de `job_pipeline_datos_empresas.json` y reemplazar `<su-correo>` en las rutas por la ruta real de la carpeta en el workspace. Sin un clúster definido, el Job usa cómputo serverless.
+1. **Traer los notebooks al workspace.** Lo más simple es crear un *Git folder* (Workspace → Create → Git folder) con este repositorio; trae las tres carpetas (`Capa Silver`, `Capa Gold`, `Orquestacion e Idempotencia`) juntas, que es lo que necesitan las rutas relativas. Otra opción es importar las tres carpetas manteniendo esa misma estructura de hermanas.
+2. **Primera ejecución:** abrir `10_Orquestador_Pipeline` (en `Orquestacion e Idempotencia/`) y darle *Run all*. Crea los esquemas y todas las tablas.
+3. **Crear el Job:** Workflows → Jobs → Create Job → menú `⋮` → *Edit as JSON* (o *View JSON* → *Edit*). Pegar el contenido de `job_pipeline_datos_empresas.json` (en `Orquestacion e Idempotencia/`) y reemplazar `<su-correo>` en las rutas por la ruta real de la carpeta en el workspace. Sin un clúster definido, el Job usa cómputo serverless.
 4. **Imagen del pipeline:** abrir el Job → pestaña *Tasks* y capturar el grafo. Después de una corrida, la vista de la ejecución muestra las tareas en verde.
-5. **Evidencia de idempotencia:** ejecutar `11_Prueba_Idempotencia` (tarda varios minutos porque corre el pipeline 4 veces), o ejecutar el Job dos veces y consultar:
+5. **Evidencia de idempotencia:** ejecutar `11_Prueba_Idempotencia` (en `Orquestacion e Idempotencia/`; tarda varios minutos porque corre el pipeline 4 veces), o ejecutar el Job dos veces y consultar:
 
 ```sql
 SELECT id_ejecucion, capa, tabla, filas_tabla, filas_insertadas, filas_actualizadas, filas_eliminadas, checksum

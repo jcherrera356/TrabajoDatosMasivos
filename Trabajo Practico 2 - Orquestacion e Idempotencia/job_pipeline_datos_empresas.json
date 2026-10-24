@@ -136,7 +136,7 @@
       "task_key": "auditoria",
       "description": "Valida duplicados y conciliacion; registra la ejecucion",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/09_Auditoria_Ejecucion",
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Orquestacion e Idempotencia/09_Auditoria_Ejecucion",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 3600,
