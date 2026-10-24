@@ -32,6 +32,8 @@ Las tablas principales son **RUES** y **SECOP**. CIIU y TRM son tablas de apoyo:
 | 12 | `12_Analisis_Preguntas_Negocio` | Análisis | Las 15 preguntas de negocio respondidas sobre Gold, con gráfico y tabla. Para la exposición. |
 | — | `job_pipeline_datos_empresas.json` | Orquestación | Definición del Job de Databricks (orquestación principal). |
 
+Los notebooks `00` a `05` y `09` a `12`, el `README.md` y el Job viven en esta carpeta (`Trabajo Practico 2 - Capa Silver/`). Los notebooks `06`, `07` y `08` (Gold) viven en la carpeta hermana `Trabajo Practico 2 - Capa Gold/` y cargan las utilidades compartidas con `%run "../Trabajo Practico 2 - Capa Silver/00_Utilidades_Pipeline"`.
+
 ## 2. Convención de nombres
 
 Se sigue la convención que ya existe en el catálogo:
