@@ -1,0 +1,150 @@
+{
+  "name": "pipeline_datos_empresas_bronze_silver_gold",
+  "description": "Pipeline ETL end-to-end del catalogo datos_empresas: Bronze -> Silver + DQL -> Gold, con auditoria de idempotencia.",
+  "max_concurrent_runs": 1,
+  "parameters": [
+    {
+      "name": "id_ejecucion",
+      "default": "{{job.run_id}}"
+    }
+  ],
+  "tags": {
+    "proyecto": "datos_empresas",
+    "arquitectura": "medallon"
+  },
+  "queue": {
+    "enabled": true
+  },
+  "tasks": [
+    {
+      "task_key": "configuracion",
+      "description": "Crea esquemas silver, dql, gold, auditoria y verifica Bronze",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/01_Configuracion_Pipeline",
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 3600
+    },
+    {
+      "task_key": "silver_ciiu",
+      "description": "Bronze CIIU -> silver.de_actividadeseconomicas + dql",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/02_Silver_CIIU",
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 3600,
+      "depends_on": [
+        {
+          "task_key": "configuracion"
+        }
+      ]
+    },
+    {
+      "task_key": "silver_secop",
+      "description": "Bronze SECOP -> silver.de_secop_contratos + dql",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/04_Silver_SECOP",
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 3600,
+      "depends_on": [
+        {
+          "task_key": "configuracion"
+        }
+      ]
+    },
+    {
+      "task_key": "silver_trm",
+      "description": "Bronze TRM -> silver.de_tasacambio + dql",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/05_Silver_TRM",
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 3600,
+      "depends_on": [
+        {
+          "task_key": "configuracion"
+        }
+      ]
+    },
+    {
+      "task_key": "silver_rues",
+      "description": "Bronze RUES -> silver.de_registromercantil + dql (valida CIIU contra Silver)",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/03_Silver_RUES",
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 3600,
+      "depends_on": [
+        {
+          "task_key": "silver_ciiu"
+        }
+      ]
+    },
+    {
+      "task_key": "gold_dim_empresas",
+      "description": "silver RUES + CIIU -> gold.de_dim_empresas",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/06_Gold_Dim_Empresas",
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 3600,
+      "depends_on": [
+        {
+          "task_key": "silver_rues"
+        }
+      ]
+    },
+    {
+      "task_key": "gold_fact_contratos",
+      "description": "silver SECOP + TRM + dim -> gold.de_fact_contratos",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/07_Gold_Fact_Contratos",
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 3600,
+      "depends_on": [
+        {
+          "task_key": "gold_dim_empresas"
+        },
+        {
+          "task_key": "silver_secop"
+        },
+        {
+          "task_key": "silver_trm"
+        }
+      ]
+    },
+    {
+      "task_key": "gold_agg_indicadores_mes",
+      "description": "dim + fact + TRM -> gold.de_agg_indicadores_mes",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/08_Gold_Agg_Indicadores_Mes",
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 3600,
+      "depends_on": [
+        {
+          "task_key": "gold_fact_contratos"
+        },
+        {
+          "task_key": "silver_trm"
+        }
+      ]
+    },
+    {
+      "task_key": "auditoria",
+      "description": "Valida duplicados y conciliacion; registra la ejecucion",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/<su-correo>/TrabajoDatosMasivos/Trabajo Practico 2 - Capa Silver/09_Auditoria_Ejecucion",
+        "source": "WORKSPACE"
+      },
+      "timeout_seconds": 3600,
+      "depends_on": [
+        {
+          "task_key": "gold_agg_indicadores_mes"
+        }
+      ]
+    }
+  ]
+}
