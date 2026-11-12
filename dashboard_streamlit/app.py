@@ -94,36 +94,34 @@ c4.metric(
 st.divider()
 
 # ---------------------------------------------------------------------------
-# Evolucion historica completa de empresas creadas (serie anual, 1916-hoy)
+# Empresas creadas y canceladas por mes (mismo rango de meses que el bloque TRM)
 # ---------------------------------------------------------------------------
-st.header("Evolucion de empresas creadas por año")
+st.header("Empresas creadas y canceladas por mes")
 
-df_anual = query(f"""
-    SELECT YEAR(anio_mes) AS anio,
-           SUM(empresas_matriculadas) AS empresas_creadas,
-           SUM(empresas_canceladas) AS empresas_canceladas
+df_mensual = query(f"""
+    SELECT anio_mes, empresas_matriculadas AS empresas_creadas, empresas_canceladas
     FROM {CATALOGO}.gold.de_agg_indicadores_mes
-    GROUP BY YEAR(anio_mes)
-    ORDER BY anio
+    WHERE trm_promedio IS NOT NULL
+    ORDER BY anio_mes
 """)
 
-ultimo_anio = int(df_anual["anio"].iloc[-1])
-mostrar_canceladas = st.checkbox("Comparar con empresas canceladas", key="chk_canceladas")
-
-fig = px.line(df_anual, x="anio", y="empresas_creadas", labels={"anio": "", "empresas_creadas": "Empresas creadas"})
-fig.update_traces(line_color="#2a78d6", name="Creadas", showlegend=mostrar_canceladas)
-if mostrar_canceladas:
-    fig.add_scatter(x=df_anual["anio"], y=df_anual["empresas_canceladas"], mode="lines",
-                     line_color="#eb6834", name="Canceladas")
+fig = px.line(df_mensual, x="anio_mes", y=["empresas_creadas", "empresas_canceladas"],
+              labels={"anio_mes": "", "value": "Empresas", "variable": ""})
+fig.for_each_trace(lambda t: t.update(
+    line_color="#2a78d6" if t.name == "empresas_creadas" else "#eb6834",
+    name="Creadas" if t.name == "empresas_creadas" else "Canceladas",
+))
 st.plotly_chart(fig, use_container_width=True)
 
+MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+            "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+ultima_fecha = df_mensual["anio_mes"].iloc[-1]
+ultimo_mes = f"{MESES_ES[ultima_fecha.month - 1]} de {ultima_fecha.year}"
 st.caption(
-    f"{df_anual['empresas_creadas'].iloc[-1]:,} empresas creadas en {ultimo_anio} (año parcial, hasta noviembre). "
-    "El crecimiento se concentra en las ultimas tres decadas, por la digitalizacion del registro mercantil; "
-    "antes de 1970 casi no hay registros digitalizados."
-    + (f" El salto de canceladas en {ultimo_anio} es una depuracion masiva de registros inactivos en fechas "
-       "puntuales de la camara de comercio, no cierres distribuidos en el año."
-       if mostrar_canceladas else "")
+    f"{int(df_mensual['empresas_creadas'].iloc[-1]):,} creadas y {int(df_mensual['empresas_canceladas'].iloc[-1]):,} "
+    f"canceladas en {ultimo_mes} (mes parcial). Los picos de canceladas en abril y agosto de 2026 son "
+    "depuraciones masivas de registros inactivos que la camara de comercio ejecuta en fechas puntuales, "
+    "no cierres de empresa distribuidos en el mes."
 )
 
 st.divider()
