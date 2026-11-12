@@ -106,6 +106,14 @@ df_mensual = query(f"""
     WHERE trm_promedio IS NOT NULL
     ORDER BY anio_mes
 """)
+df_mensual["trm_promedio"] = df_mensual["trm_promedio"].astype(float)  # viene como Decimal del conector
+
+stats_mensual = df_mensual[["empresas_creadas", "empresas_canceladas", "trm_promedio"]].agg(
+    ["mean", "min", "max"]).round(1).rename(
+    index={"mean": "Promedio", "min": "Minimo", "max": "Maximo"},
+    columns={"empresas_creadas": "Creadas", "empresas_canceladas": "Canceladas", "trm_promedio": "TRM (COP/USD)"},
+)
+st.dataframe(stats_mensual, use_container_width=True)
 
 mostrar_trm = st.checkbox("Mostrar TRM promedio mensual", key="chk_trm_mes")
 
