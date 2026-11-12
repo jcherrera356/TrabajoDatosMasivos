@@ -99,7 +99,7 @@ st.divider()
 st.header("Empresas creadas y canceladas por mes")
 
 df_mensual = query(f"""
-    SELECT anio_mes, empresas_matriculadas AS empresas_creadas, empresas_canceladas
+    SELECT anio_mes, empresas_matriculadas AS empresas_creadas, empresas_canceladas, trm_promedio
     FROM {CATALOGO}.gold.de_agg_indicadores_mes
     WHERE trm_promedio IS NOT NULL
     ORDER BY anio_mes
@@ -112,6 +112,16 @@ fig.for_each_trace(lambda t: t.update(
     name="Creadas" if t.name == "empresas_creadas" else "Canceladas",
 ))
 st.plotly_chart(fig, use_container_width=True)
+
+# El TRM (pesos por dolar) es otra unidad, no otra escala del mismo conteo de
+# empresas: no se mezcla en el mismo eje Y (desvirtua ambas series). Se muestra
+# como una segunda grafica que se puede mostrar/ocultar, alineada al mismo rango
+# de meses, en vez de un segundo eje Y.
+if st.checkbox("Mostrar TRM promedio mensual", key="chk_trm_mes"):
+    fig_trm = px.line(df_mensual, x="anio_mes", y="trm_promedio",
+                       labels={"anio_mes": "", "trm_promedio": "TRM promedio (COP/USD)"})
+    fig_trm.update_traces(line_color="#1baf7a")
+    st.plotly_chart(fig_trm, use_container_width=True)
 
 MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
             "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
