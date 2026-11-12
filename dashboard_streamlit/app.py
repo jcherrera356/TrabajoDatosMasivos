@@ -16,6 +16,8 @@ import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 from databricks import sql
 
 st.set_page_config(page_title="Datos Empresas - Analitica Gold", layout="wide")
@@ -107,20 +109,32 @@ df_mensual = query(f"""
 
 mostrar_trm = st.checkbox("Mostrar TRM promedio mensual", key="chk_trm_mes")
 
-fig = px.line(df_mensual, x="anio_mes", y=["empresas_creadas", "empresas_canceladas"],
-              labels={"anio_mes": "", "value": "Empresas", "variable": ""})
-fig.for_each_trace(lambda t: t.update(
-    line_color="#2a78d6" if t.name == "empresas_creadas" else "#eb6834",
-    name="Creadas" if t.name == "empresas_creadas" else "Canceladas",
-))
-if mostrar_trm:
-    fig.add_scatter(x=df_mensual["anio_mes"], y=df_mensual["trm_promedio"], mode="lines",
-                     line_color="#1baf7a", name="TRM promedio (COP/USD)")
-st.plotly_chart(fig, use_container_width=True)
-if mostrar_trm:
+if not mostrar_trm:
+    fig = px.line(df_mensual, x="anio_mes", y=["empresas_creadas", "empresas_canceladas"],
+                  labels={"anio_mes": "", "value": "Empresas", "variable": ""})
+    fig.for_each_trace(lambda t: t.update(
+        line_color="#2a78d6" if t.name == "empresas_creadas" else "#eb6834",
+        name="Creadas" if t.name == "empresas_creadas" else "Canceladas",
+    ))
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    # El TRM (pesos por dolar) es otra unidad, no otra escala del mismo conteo
+    # de empresas: para ver su propia fluctuacion necesita su propio eje Y,
+    # a la derecha, en vez de compartir el eje de conteos (ahi se aplana).
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Scatter(x=df_mensual["anio_mes"], y=df_mensual["empresas_creadas"],
+                              mode="lines", line_color="#2a78d6", name="Creadas"), secondary_y=False)
+    fig.add_trace(go.Scatter(x=df_mensual["anio_mes"], y=df_mensual["empresas_canceladas"],
+                              mode="lines", line_color="#eb6834", name="Canceladas"), secondary_y=False)
+    fig.add_trace(go.Scatter(x=df_mensual["anio_mes"], y=df_mensual["trm_promedio"],
+                              mode="lines", line_color="#1baf7a", line_dash="dot",
+                              name="TRM promedio (COP/USD)"), secondary_y=True)
+    fig.update_yaxes(title_text="Empresas", secondary_y=False)
+    fig.update_yaxes(title_text="TRM (COP/USD)", secondary_y=True, showgrid=False)
+    st.plotly_chart(fig, use_container_width=True)
     st.caption(
-        "El TRM comparte el mismo eje que los conteos de empresas: al ser una unidad distinta "
-        "(COP por USD) puede verse comprimido frente a los picos de canceladas, sobre todo en abril de 2026."
+        "El TRM se muestra en el eje derecho (linea punteada), con su propia escala, "
+        "para que se note su fluctuacion real frente a los conteos de empresas."
     )
 
 MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
