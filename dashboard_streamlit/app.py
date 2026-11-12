@@ -148,6 +148,39 @@ st.caption(
     "no cierres de empresa distribuidos en el mes."
 )
 
+# ---------------------------------------------------------------------------
+# Correlacion entre las 3 series anteriores (creadas, canceladas, TRM)
+# ---------------------------------------------------------------------------
+st.subheader("Correlacion entre creadas, canceladas y TRM")
+
+etiquetas = {"empresas_creadas": "Creadas", "empresas_canceladas": "Canceladas", "trm_promedio": "TRM promedio"}
+corr_matrix = df_mensual[["empresas_creadas", "empresas_canceladas", "trm_promedio"]].corr().round(3)
+nombres = [etiquetas[c] for c in corr_matrix.columns]
+
+fig_corr = go.Figure(data=go.Heatmap(
+    z=corr_matrix.values,
+    x=nombres, y=nombres,
+    zmin=-1, zmax=1, zmid=0,
+    colorscale=[[0, "#2a78d6"], [0.5, "#f0efec"], [1, "#e34948"]],
+    text=corr_matrix.values,
+    texttemplate="%{text:.2f}",
+    textfont={"size": 14},
+    hovertemplate="%{y} vs %{x}: %{z:.3f}<extra></extra>",
+    colorbar=dict(title="Pearson"),
+))
+fig_corr.update_layout(height=320, margin=dict(t=10, b=10))
+fig_corr.update_yaxes(autorange="reversed")
+st.plotly_chart(fig_corr, use_container_width=True)
+
+st.caption(
+    f"Correlacion de Pearson sobre los {len(df_mensual)} meses con TRM disponible. Creadas y canceladas tienen "
+    f"una correlacion positiva debil ({corr_matrix.loc['empresas_creadas', 'empresas_canceladas']:.2f}) -ambas "
+    "suben y bajan juntas con el nivel general de actividad del registro mercantil. El TRM, en cambio, no muestra "
+    f"relacion con ninguna de las dos (ambas cercanas a 0: {corr_matrix.loc['empresas_creadas', 'trm_promedio']:.2f} "
+    f"y {corr_matrix.loc['empresas_canceladas', 'trm_promedio']:.2f}), consistente con el hallazgo de la Fase 5 "
+    "del notebook de CRISP-DM."
+)
+
 st.divider()
 
 # ---------------------------------------------------------------------------
