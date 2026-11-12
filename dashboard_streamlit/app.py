@@ -301,6 +301,177 @@ fig = px.bar(
 fig.update_traces(marker_color="#2F3C7E")
 st.plotly_chart(fig, use_container_width=True)
 
+st.divider()
+
+# ---------------------------------------------------------------------------
+# Bloque D: ubicacion (camara de comercio) y participacion como proveedor
+# ---------------------------------------------------------------------------
+st.header("D. ¿La ubicacion se relaciona con ser proveedor del Estado?")
+
+por_camara = query(f"""
+    SELECT e.camara_comercio,
+           COUNT(DISTINCT e.llave_empresa) AS total_empresas,
+           ROUND(100.0 * COUNT(DISTINCT f.llave_empresa_proveedor) / COUNT(DISTINCT e.llave_empresa), 3) AS pct_proveedoras
+    FROM {CATALOGO}.gold.de_dim_empresas e
+    LEFT JOIN {CATALOGO}.gold.de_fact_contratos f ON f.llave_empresa_proveedor = e.llave_empresa
+    GROUP BY e.camara_comercio
+    HAVING COUNT(DISTINCT e.llave_empresa) > 5000
+    ORDER BY pct_proveedoras DESC
+    LIMIT 10
+""")
+fig = px.bar(
+    por_camara.sort_values("pct_proveedoras"),
+    x="pct_proveedoras", y="camara_comercio", orientation="h",
+    labels={"pct_proveedoras": "% de empresas que son proveedoras del Estado", "camara_comercio": ""},
+)
+fig.update_traces(marker_color="#2a78d6")
+st.plotly_chart(fig, use_container_width=True)
+top_camara = por_camara.sort_values("pct_proveedoras", ascending=False).iloc[0]
+camaras_grandes = query(f"""
+    SELECT e.camara_comercio,
+           ROUND(100.0 * COUNT(DISTINCT f.llave_empresa_proveedor) / COUNT(DISTINCT e.llave_empresa), 2) AS pct_proveedoras
+    FROM {CATALOGO}.gold.de_dim_empresas e
+    LEFT JOIN {CATALOGO}.gold.de_fact_contratos f ON f.llave_empresa_proveedor = e.llave_empresa
+    WHERE e.camara_comercio = 'BOGOTA'
+    GROUP BY e.camara_comercio
+""")
+pct_bogota = camaras_grandes["pct_proveedoras"].iloc[0] if not camaras_grandes.empty else None
+st.caption(
+    f"{top_camara['camara_comercio'].title()} tiene la mayor proporcion de empresas proveedoras del Estado "
+    f"({top_camara['pct_proveedoras']}%)"
+    + (f", varias veces mas que Bogota ({pct_bogota}%)" if pct_bogota is not None else "")
+    + ": en camaras de ciudades intermedias, una porcion mayor del tejido empresarial local depende de la "
+    "contratacion publica regional que en las grandes capitales."
+)
+
+st.divider()
+
+# ---------------------------------------------------------------------------
+# Bloque E: actividad economica y participacion en contratacion estatal
+# ---------------------------------------------------------------------------
+st.header("E. ¿Que actividades economicas concentran mas proveedores del Estado?")
+
+por_actividad = query(f"""
+    SELECT CONCAT(e.division_ciiu_principal, ' - ', MIN(e.descripcion_ciiu_principal)) AS actividad,
+           COUNT(DISTINCT e.llave_empresa) AS total_empresas,
+           ROUND(100.0 * COUNT(DISTINCT f.llave_empresa_proveedor) / COUNT(DISTINCT e.llave_empresa), 3) AS pct_proveedoras
+    FROM {CATALOGO}.gold.de_dim_empresas e
+    LEFT JOIN {CATALOGO}.gold.de_fact_contratos f ON f.llave_empresa_proveedor = e.llave_empresa
+    WHERE e.division_ciiu_principal IS NOT NULL
+    GROUP BY e.division_ciiu_principal
+    HAVING COUNT(DISTINCT e.llave_empresa) > 10000
+    ORDER BY pct_proveedoras DESC
+    LIMIT 10
+""")
+fig = px.bar(
+    por_actividad.sort_values("pct_proveedoras"),
+    x="pct_proveedoras", y="actividad", orientation="h",
+    labels={"pct_proveedoras": "% de empresas que son proveedoras del Estado", "actividad": ""},
+)
+fig.update_traces(marker_color="#1baf7a")
+st.plotly_chart(fig, use_container_width=True)
+top_actividad = por_actividad.sort_values("pct_proveedoras", ascending=False).iloc[0]
+st.caption(
+    f"{top_actividad['actividad']} lidera con {top_actividad['pct_proveedoras']}% de sus empresas como "
+    "proveedoras del Estado. Las actividades en el top son, en general, las que el Estado mas contrata "
+    "(infraestructura, salud publica, control fiscal, sistemas), lo que explica la concentracion."
+)
+
+st.divider()
+
+# ---------------------------------------------------------------------------
+# Bloque F: tipo de empresa (persona natural vs juridica)
+# ---------------------------------------------------------------------------
+st.header("F. ¿El tipo de empresa se relaciona con ser proveedor y con sobrevivir?")
+
+por_tipo = query(f"""
+    SELECT
+      CASE WHEN e.organizacion_juridica = 'PERSONA NATURAL' THEN 'Persona Natural' ELSE 'Persona Juridica' END AS tipo_empresa,
+      COUNT(DISTINCT e.llave_empresa) AS total_empresas,
+      ROUND(100.0 * COUNT(DISTINCT f.llave_empresa_proveedor) / COUNT(DISTINCT e.llave_empresa), 3) AS pct_proveedoras,
+      ROUND(100.0 * SUM(CASE WHEN e.es_activa THEN 1 ELSE 0 END) / COUNT(DISTINCT e.llave_empresa), 2) AS pct_activas
+    FROM {CATALOGO}.gold.de_dim_empresas e
+    LEFT JOIN {CATALOGO}.gold.de_fact_contratos f ON f.llave_empresa_proveedor = e.llave_empresa
+    GROUP BY CASE WHEN e.organizacion_juridica = 'PERSONA NATURAL' THEN 'Persona Natural' ELSE 'Persona Juridica' END
+""")
+col_izq, col_der = st.columns(2)
+with col_izq:
+    fig = px.bar(por_tipo, x="tipo_empresa", y="pct_proveedoras",
+                 labels={"tipo_empresa": "", "pct_proveedoras": "% proveedoras del Estado"})
+    fig.update_traces(marker_color="#2a78d6")
+    st.plotly_chart(fig, use_container_width=True)
+with col_der:
+    fig = px.bar(por_tipo, x="tipo_empresa", y="pct_activas",
+                 labels={"tipo_empresa": "", "pct_activas": "% activas (no canceladas)"})
+    fig.update_traces(marker_color="#eb6834")
+    st.plotly_chart(fig, use_container_width=True)
+fila_natural = por_tipo.loc[por_tipo["tipo_empresa"] == "Persona Natural"].iloc[0]
+fila_juridica = por_tipo.loc[por_tipo["tipo_empresa"] == "Persona Juridica"].iloc[0]
+st.caption(
+    f"Las personas juridicas tienen {fila_juridica['pct_proveedoras'] / fila_natural['pct_proveedoras']:.1f}x "
+    f"mas probabilidad de ser proveedoras del Estado que las personas naturales "
+    f"({fila_juridica['pct_proveedoras']}% vs {fila_natural['pct_proveedoras']}%) y tambien sobreviven mas "
+    f"({fila_juridica['pct_activas']}% activas vs {fila_natural['pct_activas']}%): formalizarse como "
+    "sociedad se asocia tanto con mas acceso a contratacion publica como con mayor supervivencia."
+)
+
+st.divider()
+
+# ---------------------------------------------------------------------------
+# Bloque G: respuesta directa - ser proveedor del Estado y supervivencia
+# ---------------------------------------------------------------------------
+st.header("G. ¿Ser proveedor del Estado se relaciona con sobrevivir mas tiempo?")
+
+por_grupo = query(f"""
+    SELECT
+      CASE WHEN f.llave_empresa_proveedor IS NOT NULL THEN 'Proveedor del Estado' ELSE 'No proveedor' END AS grupo,
+      COUNT(DISTINCT e.llave_empresa) AS total_empresas,
+      ROUND(100.0 * SUM(CASE WHEN e.es_activa THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_activas
+    FROM {CATALOGO}.gold.de_dim_empresas e
+    LEFT JOIN (SELECT DISTINCT llave_empresa_proveedor FROM {CATALOGO}.gold.de_fact_contratos) f
+      ON f.llave_empresa_proveedor = e.llave_empresa
+    GROUP BY CASE WHEN f.llave_empresa_proveedor IS NOT NULL THEN 'Proveedor del Estado' ELSE 'No proveedor' END
+""")
+fig = px.bar(por_grupo, x="grupo", y="pct_activas",
+             labels={"grupo": "", "pct_activas": "% de empresas activas"})
+fig.update_traces(marker_color=["#eb6834", "#2a78d6"])
+st.plotly_chart(fig, use_container_width=True)
+pct_activas_proveedor = por_grupo.loc[por_grupo["grupo"] == "Proveedor del Estado", "pct_activas"].iloc[0]
+pct_activas_no_proveedor = por_grupo.loc[por_grupo["grupo"] == "No proveedor", "pct_activas"].iloc[0]
+diferencia_activas = round(pct_activas_proveedor - pct_activas_no_proveedor, 1)
+st.caption(
+    f"{pct_activas_proveedor}% de las empresas que alguna vez fueron proveedoras del Estado siguen activas, "
+    f"frente a {pct_activas_no_proveedor}% de las que nunca lo fueron -una diferencia de {diferencia_activas} "
+    "puntos porcentuales. Esta es la respuesta mas directa a la pregunta de negocio: ser proveedor del Estado "
+    "se asocia con una mayor supervivencia empresarial, aunque la diferencia es modesta y puede reflejar tanto "
+    "el efecto de un ingreso mas estable como un sesgo de seleccion (el Estado tiende a contratar empresas ya "
+    "consolidadas, no recien creadas)."
+)
+
+st.divider()
+
+# ---------------------------------------------------------------------------
+# Conclusiones generales (respuesta consolidada a la pregunta de negocio)
+# ---------------------------------------------------------------------------
+st.header("Conclusiones")
+st.markdown(f"""
+Volviendo a la pregunta de negocio: *¿como se relaciona la creacion y cancelacion de empresas en Colombia
+con su participacion como proveedores del Estado y con la TRM?*
+
+- **La TRM no se relaciona con el ciclo de vida empresarial.** Las correlaciones con creacion y cancelacion
+  mensual son practicamente cero ({corr_matrix.loc['empresas_creadas', 'trm_promedio']:.2f} y
+  {corr_matrix.loc['empresas_canceladas', 'trm_promedio']:.2f}). No hay evidencia, en los meses disponibles,
+  de que el tipo de cambio influya en que una empresa nazca o cierre.
+- **Ser proveedor del Estado si se relaciona con la supervivencia**, aunque de forma modesta:
+  {pct_activas_proveedor}% de activas entre proveedoras vs {pct_activas_no_proveedor}% entre no proveedoras.
+- **Esa relacion es mas fuerte en algunos segmentos que en otros:** las personas juridicas (vs. naturales)
+  y las empresas de ciudades intermedias y sectores ligados a infraestructura/salud/TI (vs. grandes
+  capitales y comercio general) tienen tasas de participacion estatal notablemente mas altas.
+- **Conclusion honesta:** el factor que mas se relaciona con el ciclo de vida de una empresa en estos datos
+  no es macroeconomico (TRM), sino estructural -el tipo de organizacion juridica y su relacion con el Estado
+  como cliente.
+""")
+
 st.caption(
     "Datos leidos en vivo de datos_empresas.gold.* via SQL Warehouse de Databricks. "
     "Consulta con cache de 10 minutos (st.cache_data)."
