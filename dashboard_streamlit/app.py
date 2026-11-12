@@ -108,11 +108,27 @@ df_mensual = query(f"""
 """)
 df_mensual["trm_promedio"] = df_mensual["trm_promedio"].astype(float)  # viene como Decimal del conector
 
-stats_mensual = df_mensual[["empresas_creadas", "empresas_canceladas", "trm_promedio"]].agg(
-    ["mean", "min", "max"]).round(1).rename(
-    index={"mean": "Promedio", "min": "Minimo", "max": "Maximo"},
-    columns={"empresas_creadas": "Creadas", "empresas_canceladas": "Canceladas", "trm_promedio": "TRM (COP/USD)"},
-)
+MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+            "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
+
+def mes_es(fecha) -> str:
+    return f"{MESES_ES[fecha.month - 1]} de {fecha.year}"
+
+
+filas_stats = []
+for col, etiqueta in [("empresas_creadas", "Creadas"), ("empresas_canceladas", "Canceladas"), ("trm_promedio", "TRM (COP/USD)")]:
+    fila_min = df_mensual.loc[df_mensual[col].idxmin()]
+    fila_max = df_mensual.loc[df_mensual[col].idxmax()]
+    filas_stats.append({
+        "Serie": etiqueta,
+        "Promedio": round(df_mensual[col].mean(), 1),
+        "Minimo": round(fila_min[col], 1),
+        "Mes (minimo)": mes_es(fila_min["anio_mes"]),
+        "Maximo": round(fila_max[col], 1),
+        "Mes (maximo)": mes_es(fila_max["anio_mes"]),
+    })
+stats_mensual = pd.DataFrame(filas_stats).set_index("Serie")
 st.dataframe(stats_mensual, use_container_width=True)
 
 mostrar_trm = st.checkbox("Mostrar TRM promedio mensual", key="chk_trm_mes")
@@ -145,10 +161,7 @@ else:
         "para que se note su fluctuacion real frente a los conteos de empresas."
     )
 
-MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
-            "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-ultima_fecha = df_mensual["anio_mes"].iloc[-1]
-ultimo_mes = f"{MESES_ES[ultima_fecha.month - 1]} de {ultima_fecha.year}"
+ultimo_mes = mes_es(df_mensual["anio_mes"].iloc[-1])
 st.caption(
     f"{int(df_mensual['empresas_creadas'].iloc[-1]):,} creadas y {int(df_mensual['empresas_canceladas'].iloc[-1]):,} "
     f"canceladas en {ultimo_mes} (mes parcial). Los picos de canceladas en abril y agosto de 2026 son "
