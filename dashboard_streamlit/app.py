@@ -105,23 +105,23 @@ df_mensual = query(f"""
     ORDER BY anio_mes
 """)
 
+mostrar_trm = st.checkbox("Mostrar TRM promedio mensual", key="chk_trm_mes")
+
 fig = px.line(df_mensual, x="anio_mes", y=["empresas_creadas", "empresas_canceladas"],
               labels={"anio_mes": "", "value": "Empresas", "variable": ""})
 fig.for_each_trace(lambda t: t.update(
     line_color="#2a78d6" if t.name == "empresas_creadas" else "#eb6834",
     name="Creadas" if t.name == "empresas_creadas" else "Canceladas",
 ))
+if mostrar_trm:
+    fig.add_scatter(x=df_mensual["anio_mes"], y=df_mensual["trm_promedio"], mode="lines",
+                     line_color="#1baf7a", name="TRM promedio (COP/USD)")
 st.plotly_chart(fig, use_container_width=True)
-
-# El TRM (pesos por dolar) es otra unidad, no otra escala del mismo conteo de
-# empresas: no se mezcla en el mismo eje Y (desvirtua ambas series). Se muestra
-# como una segunda grafica que se puede mostrar/ocultar, alineada al mismo rango
-# de meses, en vez de un segundo eje Y.
-if st.checkbox("Mostrar TRM promedio mensual", key="chk_trm_mes"):
-    fig_trm = px.line(df_mensual, x="anio_mes", y="trm_promedio",
-                       labels={"anio_mes": "", "trm_promedio": "TRM promedio (COP/USD)"})
-    fig_trm.update_traces(line_color="#1baf7a")
-    st.plotly_chart(fig_trm, use_container_width=True)
+if mostrar_trm:
+    st.caption(
+        "El TRM comparte el mismo eje que los conteos de empresas: al ser una unidad distinta "
+        "(COP por USD) puede verse comprimido frente a los picos de canceladas, sobre todo en abril de 2026."
+    )
 
 MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
             "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
