@@ -68,7 +68,8 @@ def query(sql_text: str) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Encabezado y KPIs generales (Nivel 1 del analisis descriptivo: dimension)
 # ---------------------------------------------------------------------------
-st.image("logo_pascual_bravo.png", width=260)
+LOGO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo_pascual_bravo.png")
+st.image(LOGO_PATH, width=260)
 st.title("Analitica Descriptiva - Capa Gold")
 st.caption(
     "Pregunta de negocio: ¿como se relaciona la creacion y cancelacion de "
