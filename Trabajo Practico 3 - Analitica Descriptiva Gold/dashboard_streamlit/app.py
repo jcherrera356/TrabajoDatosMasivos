@@ -26,11 +26,23 @@ CATALOGO = "datos_empresas"
 # ---------------------------------------------------------------------------
 # Conexion: funciona standalone (variables de entorno) o como Databricks App
 # ---------------------------------------------------------------------------
+def _config(key: str, default: str = None) -> str:
+    # Prioridad: variable de entorno (Databricks Apps la inyecta sola) -> st.secrets
+    # (secrets.toml local o Secrets de Streamlit Cloud) -> default.
+    value = os.getenv(key)
+    if value:
+        return value
+    try:
+        return st.secrets.get(key, default)
+    except Exception:
+        return default
+
+
 @st.cache_resource
 def get_connection():
-    host = os.getenv("DATABRICKS_HOST", "dbc-7478df09-02e1.cloud.databricks.com")
-    http_path = os.getenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/1245027be3dc085e")
-    token = os.getenv("DATABRICKS_TOKEN")
+    host = _config("DATABRICKS_HOST", "dbc-7478df09-02e1.cloud.databricks.com")
+    http_path = _config("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/1245027be3dc085e")
+    token = _config("DATABRICKS_TOKEN")
     if not token:
         st.error(
             "Falta la variable de entorno DATABRICKS_TOKEN. "
