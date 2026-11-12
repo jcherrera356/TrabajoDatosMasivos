@@ -184,6 +184,56 @@ st.caption(
 st.divider()
 
 # ---------------------------------------------------------------------------
+# Empresas creadas y canceladas por actividad economica
+# ---------------------------------------------------------------------------
+st.header("Empresas creadas y canceladas por actividad economica")
+
+por_actividad_ciclo = query(f"""
+    SELECT CONCAT(division_ciiu_principal, ' - ', MIN(descripcion_ciiu_principal)) AS actividad,
+           COUNT(*) AS empresas_creadas,
+           SUM(CASE WHEN NOT es_activa THEN 1 ELSE 0 END) AS empresas_canceladas,
+           ROUND(100.0 * SUM(CASE WHEN NOT es_activa THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_cancelacion
+    FROM {CATALOGO}.gold.de_dim_empresas
+    WHERE division_ciiu_principal IS NOT NULL
+    GROUP BY division_ciiu_principal
+    ORDER BY empresas_creadas DESC
+    LIMIT 10
+""")
+fig = px.bar(
+    por_actividad_ciclo.sort_values("empresas_creadas"),
+    x=["empresas_creadas", "empresas_canceladas"], y="actividad", orientation="h",
+    barmode="group",
+    labels={"value": "Empresas", "actividad": "", "variable": ""},
+)
+fig.for_each_trace(lambda t: t.update(
+    marker_color="#2a78d6" if t.name == "empresas_creadas" else "#eb6834",
+    name="Creadas" if t.name == "empresas_creadas" else "Canceladas",
+))
+st.plotly_chart(fig, use_container_width=True)
+
+tasa_cancelacion = query(f"""
+    SELECT CONCAT(division_ciiu_principal, ' - ', MIN(descripcion_ciiu_principal)) AS actividad,
+           ROUND(100.0 * SUM(CASE WHEN NOT es_activa THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_cancelacion
+    FROM {CATALOGO}.gold.de_dim_empresas
+    WHERE division_ciiu_principal IS NOT NULL
+    GROUP BY division_ciiu_principal
+    HAVING COUNT(*) > 10000
+    ORDER BY pct_cancelacion DESC
+    LIMIT 1
+""")
+top_riesgo = tasa_cancelacion.iloc[0]
+top_volumen = por_actividad_ciclo.iloc[0]
+st.caption(
+    f"{top_volumen['actividad']} concentra el mayor volumen, tanto de creadas ({top_volumen['empresas_creadas']:,}) "
+    f"como de canceladas ({top_volumen['empresas_canceladas']:,}) -simplemente por ser la actividad mas comun en "
+    f"el RUES. Pero en tasa de cancelacion relativa, {top_riesgo['actividad']} es la mas riesgosa, con "
+    f"{top_riesgo['pct_cancelacion']}% de sus empresas canceladas (mas del doble que casi cualquier otra "
+    "actividad con volumen comparable): el volumen absoluto y el riesgo relativo cuentan historias distintas."
+)
+
+st.divider()
+
+# ---------------------------------------------------------------------------
 # Bloque A: TRM vs creacion/cancelacion de empresas (cruce temporal, Gold agg)
 # ---------------------------------------------------------------------------
 st.header("A. TRM y el ciclo de vida de las empresas")
@@ -446,56 +496,6 @@ st.caption(
     "se asocia con una mayor supervivencia empresarial, aunque la diferencia es modesta y puede reflejar tanto "
     "el efecto de un ingreso mas estable como un sesgo de seleccion (el Estado tiende a contratar empresas ya "
     "consolidadas, no recien creadas)."
-)
-
-st.divider()
-
-# ---------------------------------------------------------------------------
-# Bloque H: empresas creadas y canceladas por actividad economica
-# ---------------------------------------------------------------------------
-st.header("H. Empresas creadas y canceladas por actividad economica")
-
-por_actividad_ciclo = query(f"""
-    SELECT CONCAT(division_ciiu_principal, ' - ', MIN(descripcion_ciiu_principal)) AS actividad,
-           COUNT(*) AS empresas_creadas,
-           SUM(CASE WHEN NOT es_activa THEN 1 ELSE 0 END) AS empresas_canceladas,
-           ROUND(100.0 * SUM(CASE WHEN NOT es_activa THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_cancelacion
-    FROM {CATALOGO}.gold.de_dim_empresas
-    WHERE division_ciiu_principal IS NOT NULL
-    GROUP BY division_ciiu_principal
-    ORDER BY empresas_creadas DESC
-    LIMIT 10
-""")
-fig = px.bar(
-    por_actividad_ciclo.sort_values("empresas_creadas"),
-    x=["empresas_creadas", "empresas_canceladas"], y="actividad", orientation="h",
-    barmode="group",
-    labels={"value": "Empresas", "actividad": "", "variable": ""},
-)
-fig.for_each_trace(lambda t: t.update(
-    marker_color="#2a78d6" if t.name == "empresas_creadas" else "#eb6834",
-    name="Creadas" if t.name == "empresas_creadas" else "Canceladas",
-))
-st.plotly_chart(fig, use_container_width=True)
-
-tasa_cancelacion = query(f"""
-    SELECT CONCAT(division_ciiu_principal, ' - ', MIN(descripcion_ciiu_principal)) AS actividad,
-           ROUND(100.0 * SUM(CASE WHEN NOT es_activa THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_cancelacion
-    FROM {CATALOGO}.gold.de_dim_empresas
-    WHERE division_ciiu_principal IS NOT NULL
-    GROUP BY division_ciiu_principal
-    HAVING COUNT(*) > 10000
-    ORDER BY pct_cancelacion DESC
-    LIMIT 1
-""")
-top_riesgo = tasa_cancelacion.iloc[0]
-top_volumen = por_actividad_ciclo.iloc[0]
-st.caption(
-    f"{top_volumen['actividad']} concentra el mayor volumen, tanto de creadas ({top_volumen['empresas_creadas']:,}) "
-    f"como de canceladas ({top_volumen['empresas_canceladas']:,}) -simplemente por ser la actividad mas comun en "
-    f"el RUES. Pero en tasa de cancelacion relativa, {top_riesgo['actividad']} es la mas riesgosa, con "
-    f"{top_riesgo['pct_cancelacion']}% de sus empresas canceladas (mas del doble que casi cualquier otra "
-    "actividad con volumen comparable): el volumen absoluto y el riesgo relativo cuentan historias distintas."
 )
 
 st.divider()
