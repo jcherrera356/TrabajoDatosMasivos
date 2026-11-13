@@ -13,12 +13,14 @@ En ambos casos el codigo es el mismo: get_connection() detecta donde corre.
 """
 
 import os
+import time
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from databricks import sql
+from databricks.sql.exc import OperationalError
 
 st.set_page_config(page_title="Datos Empresas - Analitica Gold", layout="wide")
 
@@ -55,14 +57,39 @@ def get_connection():
     return sql.connect(server_hostname=host, http_path=http_path, access_token=token)
 
 
+INTENTOS_MAX = 4
+ESPERA_ENTRE_INTENTOS_SEG = 8
+
+
 @st.cache_data(ttl=600)
 def query(sql_text: str) -> pd.DataFrame:
-    conn = get_connection()
-    with conn.cursor() as cur:
-        cur.execute(sql_text)
-        cols = [c[0] for c in cur.description]
-        rows = cur.fetchall()
-    return pd.DataFrame(rows, columns=cols)
+    # El SQL Warehouse se apaga solo por inactividad (auto-stop). La primera consulta
+    # despues de un rato lo despierta, pero puede tardar en arrancar -sin reintentos,
+    # esa consulta falla con un error de conexion en vez de simplemente esperar.
+    for intento in range(1, INTENTOS_MAX + 1):
+        try:
+            conn = get_connection()
+            with conn.cursor() as cur:
+                cur.execute(sql_text)
+                cols = [c[0] for c in cur.description]
+                rows = cur.fetchall()
+            return pd.DataFrame(rows, columns=cols)
+        except OperationalError:
+            if intento == INTENTOS_MAX:
+                st.error(
+                    "No se pudo conectar al SQL Warehouse de Databricks despues de "
+                    f"{INTENTOS_MAX} intentos. Es probable que el warehouse este "
+                    "arrancando tras un periodo de inactividad (auto-stop) -esperá "
+                    "un minuto y recarga la pagina."
+                )
+                st.stop()
+            get_connection.clear()  # la conexion cacheada puede haber quedado invalida
+            with st.spinner(
+                f"El SQL Warehouse parece estar arrancando (auto-stop) -reintentando "
+                f"({intento}/{INTENTOS_MAX})..."
+            ):
+                time.sleep(ESPERA_ENTRE_INTENTOS_SEG)
+    return pd.DataFrame()
 
 
 # ---------------------------------------------------------------------------
