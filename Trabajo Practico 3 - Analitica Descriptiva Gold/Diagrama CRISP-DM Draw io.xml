@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram id="crispdm-datos-empresas" name="CRISP-DM - Datos Empresas">
+    <mxGraphModel dx="1414" dy="829" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1250" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" value="CRISP-DM aplicado al proyecto Datos Empresas (RUES + SECOP + CIIU + TRM)" vertex="1">
+          <mxGeometry height="40" width="1160" x="20" y="10" as="geometry" />
+        </mxCell>
+
+        <mxCell id="outer-ring" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;strokeWidth=5;" value="" vertex="1">
+          <mxGeometry height="1160" width="1160" x="20" y="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="data-cyl" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="Datos&#10;RUES + SECOP +&#10;CIIU + TRM" vertex="1">
+          <mxGeometry height="160" width="160" x="520" y="540" as="geometry" />
+        </mxCell>
+
+        <mxCell id="bu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6c8ebf;strokeColor=#4d6a94;fontColor=#ffffff;fontSize=13;" value="&lt;b&gt;1. Business Understanding&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;Pregunta de negocio: ¿como se relaciona la creacion y cancelacion de empresas con ser proveedor del Estado y con la TRM?&lt;/font&gt;" vertex="1">
+          <mxGeometry height="130" width="320" x="160" y="230" as="geometry" />
+        </mxCell>
+
+        <mxCell id="du" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6c8ebf;strokeColor=#4d6a94;fontColor=#ffffff;fontSize=13;" value="&lt;b&gt;2. Data Understanding&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;Bronze (TP1): RUES 3.022.492, SECOP 289.157, CIIU 499, TRM 273 filas. Ingesta incremental via Job diario.&lt;/font&gt;" vertex="1">
+          <mxGeometry height="130" width="320" x="720" y="230" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6c8ebf;strokeColor=#4d6a94;fontColor=#ffffff;fontSize=13;" value="&lt;b&gt;3. Data Preparation&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;Silver/DQL (TP2): reglas de calidad + MERGE idempotente. Verificado: Bronze = Silver + DQL (ej. RUES 3.022.492 = 2.651.079 + 371.413).&lt;/font&gt;" vertex="1">
+          <mxGeometry height="130" width="320" x="860" y="460" as="geometry" />
+        </mxCell>
+
+        <mxCell id="mo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6c8ebf;strokeColor=#4d6a94;fontColor=#ffffff;fontSize=13;" value="&lt;b&gt;4. Modeling&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;Gold (TP2): dim_empresas, fact_contratos, agg_indicadores_mes -esquema estrella. No es modelo predictivo (proyecto descriptivo).&lt;/font&gt;" vertex="1">
+          <mxGeometry height="130" width="320" x="860" y="710" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ev" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6c8ebf;strokeColor=#4d6a94;fontColor=#ffffff;fontSize=13;" value="&lt;b&gt;5. Evaluation&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;TRM sin relacion (corr ~0.02). Si hay relacion real: proveedor del Estado (+4pp activas), tipo de empresa, ubicacion y actividad economica (TP3).&lt;/font&gt;" vertex="1">
+          <mxGeometry height="130" width="320" x="430" y="950" as="geometry" />
+        </mxCell>
+
+        <mxCell id="de" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6c8ebf;strokeColor=#4d6a94;fontColor=#ffffff;fontSize=13;" value="&lt;b&gt;6. Deployment &amp;amp; Governance&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;Dashboard Streamlit (8 preguntas de negocio) + Job diario + Gobernanza: RBAC, column masks, row filters, auditoria (TP3).&lt;/font&gt;" vertex="1">
+          <mxGeometry height="130" width="320" x="60" y="640" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-bu-du-1" parent="1" style="endArrow=classic;html=1;strokeColor=#999999;strokeWidth=3;rounded=0;" edge="1" source="bu" target="du">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="480" y="275" as="sourcePoint" />
+            <mxPoint x="720" y="275" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-bu-du-2" parent="1" style="endArrow=classic;html=1;strokeColor=#999999;strokeWidth=3;rounded=0;" edge="1" source="du" target="bu">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="720" y="300" as="sourcePoint" />
+            <mxPoint x="480" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e-du-dp" parent="1" style="endArrow=classic;html=1;strokeColor=#999999;strokeWidth=3;curved=1;rounded=0;" edge="1" source="du" target="dp">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1010" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e-dp-mo-1" parent="1" style="endArrow=classic;html=1;strokeColor=#999999;strokeWidth=3;rounded=0;" edge="1" source="dp" target="mo">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1000" y="590" as="sourcePoint" />
+            <mxPoint x="1000" y="710" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-dp-mo-2" parent="1" style="endArrow=classic;html=1;strokeColor=#999999;strokeWidth=3;rounded=0;" edge="1" source="mo" target="dp">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1040" y="710" as="sourcePoint" />
+            <mxPoint x="1040" y="590" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e-mo-ev" parent="1" style="endArrow=classic;html=1;strokeColor=#999999;strokeWidth=3;curved=1;rounded=0;" edge="1" source="mo" target="ev">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900" y="920" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e-ev-bu" parent="1" style="endArrow=classic;html=1;strokeColor=#808080;strokeWidth=4;curved=1;rounded=0;fontSize=12;fontStyle=1;" edge="1" source="ev" target="bu" value="Hallazgo: TRM sin relacion&#10;-&gt; replantear la pregunta">
+          <mxGeometry relative="1" x="-0.1" y="-10" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="760" />
+              <mxPoint x="440" y="480" />
+            </Array>
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e-ev-de" parent="1" style="endArrow=classic;html=1;strokeColor=#999999;strokeWidth=3;curved=1;rounded=0;" edge="1" source="ev" target="de">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="330" y="900" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e-de-bu" parent="1" style="endArrow=classic;html=1;strokeColor=#808080;strokeWidth=4;curved=1;rounded=0;" edge="1" source="de" target="bu">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="40" y="640" />
+              <mxPoint x="40" y="295" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="legend" parent="1" style="text;html=1;fontSize=12;align=left;verticalAlign=top;" value="CRISP-DM es iterativo, no lineal: la Fase 5 (Evaluation) no encontro relacion entre la TRM y el ciclo de vida empresarial,&#10;lo que -siguiendo la metodologia- regresa el proyecto a la Fase 1 para replantear la pregunta en vez de forzar una conclusion.&#10;En este proyecto, el giro fue hacia dimensiones estructurales (tipo de empresa, ubicacion, actividad economica) que si mostraron relacion real." vertex="1">
+          <mxGeometry height="70" width="1160" x="20" y="1160" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
